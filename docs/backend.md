@@ -125,6 +125,7 @@ Részletes endpoint dokumentáció:
 - Users: `docs/api-users.md`
 - Lists & Words: `docs/api-lists-words.md`
 - Color lists & Colors: `docs/api-color-lists-colors.md`
+- Adatbázis séma (MySQL, táblák + `CREATE TABLE`): `docs/database-schema.md`
 
 ### Public
 
