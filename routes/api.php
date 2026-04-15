@@ -1,18 +1,20 @@
 <?php
 
+use App\Http\Controllers\Api\BoardSaveController;
+use App\Http\Controllers\Api\BoardSaveGroupController;
+use App\Http\Controllers\Api\ColorController;
+use App\Http\Controllers\Api\ColorListController;
+use App\Http\Controllers\Api\ListController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WordController;
+use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Api\UserController;
-use App\Http\Controllers\Api\ListController;
-use App\Http\Controllers\Api\WordController;
-use App\Http\Controllers\Api\ColorListController;
-use App\Http\Controllers\Api\ColorController;
 
 Route::get('/ping', function () {
     return response()->json([
         'ok' => true,
-        'message' => 'API mukodik'
+        'message' => 'API mukodik',
     ]);
 });
 
@@ -48,6 +50,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/color-lists/{color_list}/colors', [ColorController::class, 'store']);
     Route::put('/color-lists/{color_list}/colors/{color}', [ColorController::class, 'update']);
     Route::delete('/color-lists/{color_list}/colors/{color}', [ColorController::class, 'destroy']);
+
+    // Táblaállapot mentések (docs/api-board-saves.md)
+    Route::apiResource('board-save-groups', BoardSaveGroupController::class);
+    Route::apiResource('board-save-groups.saves', BoardSaveController::class);
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {

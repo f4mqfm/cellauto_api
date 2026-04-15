@@ -14,6 +14,9 @@ erDiagram
     lists ||--o{ words : "words.list_id"
     users ||--o{ color_lists : "color_lists.user_id"
     color_lists ||--o{ colors : "colors.list_id"
+    users ||--o{ board_save_groups : "board_save_groups.user_id"
+    board_save_groups ||--o{ board_saves : "board_saves.board_save_group_id"
+    users ||--o{ board_saves : "board_saves.user_id"
 ```
 
 ## Üzleti / API táblák
@@ -214,6 +217,86 @@ CREATE TABLE `colors` (
 
 ---
 
+### `board_save_groups`
+
+Táblaállapot-mentések **csoportjai** (felhasználónként). Migráció: `2026_04_10_120000_create_board_save_groups_table.php`.
+
+| Oszlop | Típus | Megjegyzés |
+|--------|--------|------------|
+| `id` | `bigint unsigned`, PK, AI | |
+| `user_id` | `bigint unsigned`, NOT NULL | FK → `users.id`, **ON DELETE CASCADE** |
+| `name` | `varchar(255)`, NOT NULL | csoport neve |
+| `position` | `int unsigned`, NULL | megjelenítési sorrend (opcionális) |
+| `created_at` | `timestamp`, NULL | |
+| `updated_at` | `timestamp`, NULL | |
+
+**Indexek / kulcsok:** `PRIMARY KEY (id)`, index `board_save_groups_user_id_foreign (user_id)`, **FK** `board_save_groups_user_id_foreign`: `user_id` → `users(id)`.
+
+<details>
+<summary>SHOW CREATE TABLE (board_save_groups)</summary>
+
+```sql
+CREATE TABLE `board_save_groups` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `position` int unsigned DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `board_save_groups_user_id_foreign` (`user_id`),
+  CONSTRAINT `board_save_groups_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+</details>
+
+---
+
+### `board_saves`
+
+Egy mentés egy csoporton belül: név + JSON **payload** (táblaállapot). Migráció: `2026_04_10_120001_create_board_saves_table.php`.
+
+| Oszlop | Típus | Megjegyzés |
+|--------|--------|------------|
+| `id` | `bigint unsigned`, PK, AI | |
+| `user_id` | `bigint unsigned`, NOT NULL | FK → `users.id` (szűréshez; **ON DELETE CASCADE**) |
+| `board_save_group_id` | `bigint unsigned`, NOT NULL | FK → `board_save_groups.id`, **ON DELETE CASCADE** |
+| `name` | `varchar(255)`, NOT NULL | mentés neve; **egyedi a csoporton belül** |
+| `payload` | `json`, NOT NULL | lásd `docs/api-board-saves.md` |
+| `created_at` | `timestamp`, NULL | |
+| `updated_at` | `timestamp`, NULL | |
+
+**Korlátok:**
+
+- `UNIQUE (board_save_group_id, name)` – index neve: `board_saves_board_save_group_id_name_unique`.
+- **FK** `board_saves_board_save_group_id_foreign`: `board_save_group_id` → `board_save_groups(id)`.
+- **FK** `board_saves_user_id_foreign`: `user_id` → `users(id)`.
+
+<details>
+<summary>SHOW CREATE TABLE (board_saves)</summary>
+
+```sql
+CREATE TABLE `board_saves` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `board_save_group_id` bigint unsigned NOT NULL,
+  `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payload` json NOT NULL,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `board_saves_board_save_group_id_name_unique` (`board_save_group_id`,`name`),
+  KEY `board_saves_user_id_foreign` (`user_id`),
+  CONSTRAINT `board_saves_board_save_group_id_foreign` FOREIGN KEY (`board_save_group_id`) REFERENCES `board_save_groups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `board_saves_user_id_foreign` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+</details>
+
+---
+
 ## Laravel / infrastruktúra táblák
 
 Ezek a framework funkciókhoz kellenek (session, cache, queue, migrációk, Sanctum tokenek, jelszó reset).
@@ -348,6 +431,9 @@ CREATE TABLE `migrations` (
 | `words` | `fk_words_list` | `list_id` | `lists(id)` |
 | `color_lists` | `fk_color_lists_user` | `user_id` | `users(id)` |
 | `colors` | `fk_colors_list` | `list_id` | `color_lists(id)` |
+| `board_save_groups` | `board_save_groups_user_id_foreign` | `user_id` | `users(id)` |
+| `board_saves` | `board_saves_board_save_group_id_foreign` | `board_save_group_id` | `board_save_groups(id)` |
+| `board_saves` | `board_saves_user_id_foreign` | `user_id` | `users(id)` |
 
 ## Megjegyzés az indexnevekre
 

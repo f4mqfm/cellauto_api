@@ -106,6 +106,10 @@ Lásd: `app/Http/Controllers/AuthController.php`
 
 A `words` táblában a szó szövege és a megjelenési **sorrend** (`position`) is listán belül egyedi: `UNIQUE(list_id, word)` és `UNIQUE(list_id, position)`. Részletek és API: `docs/api-lists-words.md`. Séma bővítés migráció: `database/migrations/2026_04_10_100000_add_position_to_words_table.php`.
 
+## Adatmodell – táblaállapot mentések (`board_save_groups`, `board_saves`)
+
+Felhasználónként csoportok és név szerinti mentések (JSON **payload**). Migrációk: `2026_04_10_120000_create_board_save_groups_table.php`, `2026_04_10_120001_create_board_saves_table.php`. API és végpontok: `docs/api-board-saves.md`; követelmények: `docs/kovetelmenyspecifikacio-tablamentesek.md`. Ütemezett fejlesztések: `docs/implementacios-terv.md`.
+
 ## Middleware / jogosultság
 
 Az `admin` middleware alias itt van regisztrálva:
@@ -125,6 +129,7 @@ Részletes endpoint dokumentáció:
 - Users: `docs/api-users.md`
 - Lists & Words: `docs/api-lists-words.md`
 - Color lists & Colors: `docs/api-color-lists-colors.md`
+- Táblaállapot mentések (spec): `docs/api-board-saves.md`
 - Adatbázis séma (MySQL, táblák + `CREATE TABLE`): `docs/database-schema.md`
 
 ### Public
