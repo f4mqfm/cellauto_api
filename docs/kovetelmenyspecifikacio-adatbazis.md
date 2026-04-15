@@ -80,17 +80,18 @@ Az adatbázis a sejtautomata API **perzisztens rétege**: felhasználók, azokho
 
 ---
 
-### 3.3 `words` – szavak egy listán belül
+### 3.3 `words` – szavak generációkban egy listán belül
 
 | Mező | Érték |
 |------|--------|
-| **Szerep** | A szólista **elemei**: szöveg + listán belüli **egyedi pozíció** és **egyedi szó** ugyanabban a listában. |
+| **Szerep** | A szólista elemei **generációkba** (`GEN1..GENN`) szervezve: szöveg. |
 | **Kapcsolatok** | `list_id` → `lists.id`. |
-| **Kulcs követelmények** | **UNIQUE** `(list_id, word)`; **UNIQUE** `(list_id, position)`; FK `list_id`. |
+| **Kulcs követelmények** | **UNIQUE** `(list_id, generation, word)`; FK `list_id`. |
 
 | Azonosító | Követelmény |
 |-----------|-------------|
-| **DB-WORD-01** | Ugyanaz a szöveg nem duplikálható ugyanabban a listában; ugyanaz a pozíció nem osztható meg két szó között ugyanabban a listában. |
+| **DB-WORD-01** | Ugyanaz a szöveg nem duplikálható ugyanabban a listában **és generációban**. |
+| **DB-WORD-02** | A generációk 1-től N-ig folytonosan kezelendők; minden generációban legalább egy szó kötelező. |
 
 ---
 

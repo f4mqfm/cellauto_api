@@ -51,6 +51,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Idle Timeout Minutes
+    |--------------------------------------------------------------------------
+    |
+    | Tokenes API munkamenet inaktivitási ideje percben. Ha 0 vagy negatív,
+    | az inaktivitás alapú automatikus kijelentkeztetés ki van kapcsolva.
+    |
+    */
+
+    'idle_timeout' => (int) env('SANCTUM_IDLE_TIMEOUT', 120),
+
+    /*
+    |--------------------------------------------------------------------------
     | Token Prefix
     |--------------------------------------------------------------------------
     |

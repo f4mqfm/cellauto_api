@@ -3,15 +3,59 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccessLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
     public function index()
     {
-        return User::all();
+        return User::query()->get();
+    }
+
+    public function onlineStatus()
+    {
+        $users = User::query()->get();
+        $userIds = $users->pluck('id')->all();
+        if (empty($userIds)) {
+            return $users;
+        }
+
+        $tokenRows = DB::table('personal_access_tokens')
+            ->select('tokenable_id', DB::raw('COUNT(*) as active_token_count'))
+            ->where('tokenable_type', User::class)
+            ->whereIn('tokenable_id', $userIds)
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->groupBy('tokenable_id')
+            ->get();
+        $tokenCountMap = [];
+        foreach ($tokenRows as $row) {
+            $tokenCountMap[(int) $row->tokenable_id] = (int) $row->active_token_count;
+        }
+
+        $lastSeenRows = AccessLog::query()
+            ->select('user_id', DB::raw('MAX(occurred_at) as last_seen_at'))
+            ->whereIn('user_id', $userIds)
+            ->groupBy('user_id')
+            ->get();
+        $lastSeenMap = [];
+        foreach ($lastSeenRows as $row) {
+            $lastSeenMap[(int) $row->user_id] = $row->last_seen_at;
+        }
+
+        return $users->map(function (User $user) use ($tokenCountMap, $lastSeenMap) {
+            $arr = $user->toArray();
+            $tokenCount = $tokenCountMap[$user->id] ?? 0;
+            $arr['is_logged_in'] = $tokenCount > 0;
+            $arr['active_token_count'] = $tokenCount;
+            $arr['last_seen_at'] = $lastSeenMap[$user->id] ?? null;
+            return $arr;
+        });
     }
 
     public function store(Request $request)
@@ -75,4 +119,27 @@ public function update(Request $request, $id)
 
     return response()->json($user);
 }
+
+    public function destroy(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $actor = $request->user();
+        $targetId = (int) $id;
+
+        if ($targetId === (int) $actor->id) {
+            return response()->json(['error' => 'Nem törölheted önmagadat.'], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        if ($user->role === 'admin') {
+            return response()->json(['error' => 'Admin szerepkörű felhasználó nem törölhető.'], 403);
+        }
+
+        DB::transaction(function () use ($user): void {
+            $user->tokens()->delete();
+            $user->delete();
+        });
+
+        return response()->json(['ok' => true]);
+    }
 }

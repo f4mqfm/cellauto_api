@@ -8,17 +8,41 @@ use Illuminate\Http\Request;
 
 class ListController extends Controller
 {
+    private function canReadList(Request $request, WordList $list): bool
+    {
+        return (int) $list->user_id === (int) $request->user()->id || (bool) $list->public;
+    }
+
     public function index(Request $request)
     {
-        return WordList::query()
-            ->where('user_id', $request->user()->id)
+        $uid = (int) $request->user()->id;
+
+        $lists = WordList::query()
+            ->with('user:id,name,username,email')
+            ->where(function ($q) use ($uid) {
+                $q->where('user_id', $uid)
+                    ->orWhere('public', true);
+            })
             ->orderBy('id', 'desc')
             ->get();
+
+        return $lists->map(function (WordList $list) use ($uid) {
+            $arr = $list->toArray();
+            if ((int) $list->user_id !== $uid && (bool) $list->public) {
+                $owner = $list->user;
+                $arr['owner_username'] = (string) ($owner?->username ?? '');
+                $arr['owner_name'] = (string) ($owner?->name ?? '');
+                $arr['owner_email'] = (string) ($owner?->email ?? '');
+            }
+
+            unset($arr['user']);
+            return $arr;
+        })->values();
     }
 
     public function show(Request $request, WordList $list)
     {
-        if ($list->user_id !== $request->user()->id) {
+        if (! $this->canReadList($request, $list)) {
             return response()->json(['error' => 'Nincs jogosultság'], 403);
         }
 
@@ -29,11 +53,13 @@ class ListController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'public' => ['sometimes', 'boolean'],
         ]);
 
         $list = WordList::create([
             'user_id' => $request->user()->id,
             'name' => $validated['name'],
+            'public' => (bool) ($validated['public'] ?? false),
         ]);
 
         return response()->json($list, 201);
@@ -47,10 +73,12 @@ class ListController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'public' => ['sometimes', 'boolean'],
         ]);
 
         $list->update([
             'name' => $validated['name'],
+            'public' => (bool) ($validated['public'] ?? $list->public),
         ]);
 
         return response()->json($list);

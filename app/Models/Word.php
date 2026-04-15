@@ -11,14 +11,14 @@ class Word extends Model
 
     protected $fillable = [
         'list_id',
+        'generation',
         'word',
-        'position',
     ];
 
     protected function casts(): array
     {
         return [
-            'position' => 'integer',
+            'generation' => 'integer',
         ];
     }
 

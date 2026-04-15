@@ -62,4 +62,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ColorList::class, 'user_id');
     }
+
+    public function accessLogs(): HasMany
+    {
+        return $this->hasMany(AccessLog::class, 'user_id');
+    }
 }

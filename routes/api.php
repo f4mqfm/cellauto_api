@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\BoardSaveController;
 use App\Http\Controllers\Api\BoardSaveGroupController;
 use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\ColorListController;
+use App\Http\Controllers\Api\AccessLogController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WordController;
@@ -19,8 +20,11 @@ Route::get('/ping', function () {
 });
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/access-logs/visit', [AccessLogController::class, 'storeVisit']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/access-logs/me', [AccessLogController::class, 'myLogs']);
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -36,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Words (egy listán belüli szavak kezelése)
     Route::get('/lists/{list}/words', [WordController::class, 'index']);
     Route::post('/lists/{list}/words', [WordController::class, 'store']);
+    Route::put('/lists/{list}/word-generations', [WordController::class, 'replaceGenerations']);
     Route::put('/lists/{list}/words/{word}', [WordController::class, 'update']);
     Route::delete('/lists/{list}/words/{word}', [WordController::class, 'destroy']);
 
@@ -57,8 +62,11 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/admin/users/online-status', [UserController::class, 'onlineStatus']);
+    Route::get('/access-logs', [AccessLogController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::post('/users/{id}/suspend', [UserController::class, 'suspend']);
     Route::post('/users/{id}/unsuspend', [UserController::class, 'unsuspend']);
     Route::put('/users/{id}', [UserController::class, 'update']);
+    Route::delete('/users/{id}', [UserController::class, 'destroy']);
 });

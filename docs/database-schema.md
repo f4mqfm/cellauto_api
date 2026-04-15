@@ -12,6 +12,7 @@ Ez a dokumentum a **MySQL** adatbázis aktuális táblaszerkezetét mutatja. A t
 erDiagram
     users ||--o{ lists : "lists.user_id"
     lists ||--o{ words : "words.list_id"
+    users ||--o{ access_logs : "access_logs.user_id"
     users ||--o{ color_lists : "color_lists.user_id"
     color_lists ||--o{ colors : "colors.list_id"
     users ||--o{ board_save_groups : "board_save_groups.user_id"
@@ -105,21 +106,20 @@ CREATE TABLE `lists` (
 
 ### `words`
 
-Egy szólista elemei: szöveg + sorrend pozíció.
+Egy szólista elemei: generáció + szó.
 
 | Oszlop | Típus | Megjegyzés |
 |--------|--------|------------|
 | `id` | `bigint unsigned`, PK, AI | |
 | `list_id` | `bigint unsigned`, NOT NULL | FK → `lists.id` |
+| `generation` | `int unsigned`, NOT NULL, default `1` | GEN1..GENN szint |
 | `word` | `varchar(255)`, NOT NULL | |
-| `position` | `int unsigned`, NOT NULL | listán belüli sorrend |
 | `created_at` | `timestamp`, NULL | |
 | `updated_at` | `timestamp`, NULL | |
 
 **Korlátok:**
 
-- `UNIQUE (list_id, word)` – index neve a jelenlegi DB-ben: `list_id` (érdemes később beszédesebb névre átnevezni).
-- `UNIQUE (list_id, position)` – `words_list_id_position_unique`.
+- `UNIQUE (list_id, generation, word)` – `words_list_generation_word_unique`.
 - **FK** `fk_words_list`: `list_id` → `lists(id)`.
 
 <details>
@@ -129,18 +129,37 @@ Egy szólista elemei: szöveg + sorrend pozíció.
 CREATE TABLE `words` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `list_id` bigint unsigned NOT NULL,
+  `generation` int unsigned NOT NULL DEFAULT '1',
   `word` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
-  `position` int unsigned NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `list_id` (`list_id`,`word`),
-  UNIQUE KEY `words_list_id_position_unique` (`list_id`,`position`),
+  UNIQUE KEY `words_list_generation_word_unique` (`list_id`,`generation`,`word`),
   CONSTRAINT `fk_words_list` FOREIGN KEY (`list_id`) REFERENCES `lists` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 </details>
+
+---
+
+### `access_logs`
+
+Hozzáférési és látogatási események naplója (`visit`, `login`, `logout`; `www` vagy `admin` belépési pont).
+
+| Oszlop | Típus | Megjegyzés |
+|--------|--------|------------|
+| `id` | `bigint unsigned`, PK, AI | |
+| `user_id` | `bigint unsigned`, NULL | FK → `users.id`, anoním látogatásnál `NULL` |
+| `event_type` | `varchar(20)`, NOT NULL | `visit`, `login`, `logout` |
+| `entry_point` | `varchar(20)`, NOT NULL | `www` vagy `admin` |
+| `ip_address` | `varchar(45)`, NOT NULL | IPv4/IPv6 |
+| `user_agent` | `varchar(1024)`, NULL | böngésző azonosító |
+| `occurred_at` | `timestamp`, NOT NULL | esemény időpontja |
+| `created_at` | `timestamp`, NULL | |
+| `updated_at` | `timestamp`, NULL | |
+
+**Indexek / kulcsok:** `PRIMARY KEY (id)`, indexek: `event_type+entry_point`, `occurred_at`, `user_id`; **FK** `access_logs_user_id_foreign`: `user_id` → `users(id)` (`ON DELETE SET NULL`).
 
 ---
 
@@ -429,6 +448,7 @@ CREATE TABLE `migrations` (
 |--------|--------|--------|------------|
 | `lists` | `fk_lists_user` | `user_id` | `users(id)` |
 | `words` | `fk_words_list` | `list_id` | `lists(id)` |
+| `access_logs` | `access_logs_user_id_foreign` | `user_id` | `users(id)` |
 | `color_lists` | `fk_color_lists_user` | `user_id` | `users(id)` |
 | `colors` | `fk_colors_list` | `list_id` | `color_lists(id)` |
 | `board_save_groups` | `board_save_groups_user_id_foreign` | `user_id` | `users(id)` |
@@ -437,4 +457,4 @@ CREATE TABLE `migrations` (
 
 ## Megjegyzés az indexnevekre
 
-A `words` és `colors` táblákban egy-egy egyedi összetett index **neve** jelenleg `list_id`, ami összekeverhető az oszlopnévvel. Működik, de hosszabb távon érdemes lehet `words_list_word_unique` / `colors_list_position_unique` típusú nevekre átnevezni (külön migrációval).
+A `colors` táblában az egyedi összetett index neve jelenleg `list_id`, ami összekeverhető az oszlopnévvel. Működik, de hosszabb távon érdemes lehet `colors_list_position_unique` típusú névre átnevezni (külön migrációval).

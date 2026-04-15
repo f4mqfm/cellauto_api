@@ -2,7 +2,7 @@
 
 Ez a dokumentum a **cellauto** adatbázis **logikai modelljét** UML-szerű **osztálydiagram** formában foglalja össze (Mermaid). A részletes oszlopleírások és SQL a [`database-schema.md`](database-schema.md)-ben találhatók.
 
-**Verzió:** 1.0 · **Dátum:** 2026-04-11
+**Verzió:** 1.1 · **Dátum:** 2026-04-14
 
 ---
 
@@ -34,8 +34,8 @@ classDiagram
     class Word {
         +id: bigint
         +list_id: FK
+        +generation: int
         +word: string
-        +position: int
     }
 
     class ColorList {
@@ -79,7 +79,7 @@ classDiagram
 
 **Megjegyzések:**
 
-- `Word`: egy listán belül egyedi a `(list_id, word)` és a `(list_id, position)` páros (lásd séma).
+- `Word`: generáció-alapú; egyedi a `(list_id, generation, word)` és a `(list_id, position)` páros (lásd séma).
 - `Color`: egy színes listán belül egyedi a `(list_id, position)`.
 - `BoardSave`: egy csoporton belül egyedi a `name` (`board_save_group_id` + `name`).
 
@@ -205,8 +205,8 @@ class WordList {
 class Word {
   +id: bigint
   +list_id: FK
+  +generation: int
   +word: string
-  +position: int
 }
 
 class ColorList {

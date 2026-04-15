@@ -13,7 +13,15 @@ class WordList extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'public',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'public' => 'boolean',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -22,7 +30,10 @@ class WordList extends Model
 
     public function words(): HasMany
     {
-        return $this->hasMany(Word::class, 'list_id')->orderBy('position')->orderBy('id');
+        return $this->hasMany(Word::class, 'list_id')
+            ->orderBy('generation')
+            ->orderBy('word')
+            ->orderBy('id');
     }
 }
 
