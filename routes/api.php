@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AccessLogController;
 use App\Http\Controllers\Api\ListController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WordController;
+use App\Http\Controllers\Api\WordRelationController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Lists (a bejelentkezett user saját listái)
     Route::get('/lists', [ListController::class, 'index']);
+    Route::get('/public-lists', [ListController::class, 'publicIndex']);
     Route::post('/lists', [ListController::class, 'store']);
     Route::get('/lists/{list}', [ListController::class, 'show']);
     Route::put('/lists/{list}', [ListController::class, 'update']);
@@ -43,6 +45,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/lists/{list}/word-generations', [WordController::class, 'replaceGenerations']);
     Route::put('/lists/{list}/words/{word}', [WordController::class, 'update']);
     Route::delete('/lists/{list}/words/{word}', [WordController::class, 'destroy']);
+
+    // Word relations (GENn -> GENn+1)
+    Route::get('/lists/{list}/word-relations', [WordRelationController::class, 'index']);
+    Route::post('/lists/{list}/word-relations', [WordRelationController::class, 'store']);
+    Route::put('/lists/{list}/word-relations/from/{fromWord}', [WordRelationController::class, 'replaceForFromWord']);
+    Route::delete('/lists/{list}/word-relations/{relation}', [WordRelationController::class, 'destroy']);
 
     // Színes listák (color_lists + colors)
     Route::get('/color-lists', [ColorListController::class, 'index']);

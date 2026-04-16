@@ -14,6 +14,8 @@ class WordList extends Model
         'user_id',
         'name',
         'public',
+        'notes',
+        'wordlist',
     ];
 
     protected function casts(): array

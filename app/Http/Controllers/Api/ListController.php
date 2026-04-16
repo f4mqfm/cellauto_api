@@ -17,24 +17,34 @@ class ListController extends Controller
     {
         $uid = (int) $request->user()->id;
 
+        // Admin felületben is: csak a bejelentkezett user saját listái.
+        return WordList::query()
+            ->where('user_id', $uid)
+            ->orderBy('id', 'desc')
+            ->get();
+    }
+
+    /**
+     * Publikus listák (más felhasználóktól) – a www kliens használhatja.
+     * Az admin UI NEM ezt hívja.
+     */
+    public function publicIndex(Request $request)
+    {
+        $uid = (int) $request->user()->id;
+
         $lists = WordList::query()
             ->with('user:id,name,username,email')
-            ->where(function ($q) use ($uid) {
-                $q->where('user_id', $uid)
-                    ->orWhere('public', true);
-            })
+            ->where('public', true)
+            ->where('user_id', '!=', $uid)
             ->orderBy('id', 'desc')
             ->get();
 
-        return $lists->map(function (WordList $list) use ($uid) {
+        return $lists->map(function (WordList $list) {
             $arr = $list->toArray();
-            if ((int) $list->user_id !== $uid && (bool) $list->public) {
-                $owner = $list->user;
-                $arr['owner_username'] = (string) ($owner?->username ?? '');
-                $arr['owner_name'] = (string) ($owner?->name ?? '');
-                $arr['owner_email'] = (string) ($owner?->email ?? '');
-            }
-
+            $owner = $list->user;
+            $arr['owner_username'] = (string) ($owner?->username ?? '');
+            $arr['owner_name'] = (string) ($owner?->name ?? '');
+            $arr['owner_email'] = (string) ($owner?->email ?? '');
             unset($arr['user']);
             return $arr;
         })->values();
@@ -54,12 +64,16 @@ class ListController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'public' => ['sometimes', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:65535'],
+            'wordlist' => ['nullable', 'string', 'max:16777215'],
         ]);
 
         $list = WordList::create([
             'user_id' => $request->user()->id,
             'name' => $validated['name'],
             'public' => (bool) ($validated['public'] ?? false),
+            'notes' => $validated['notes'] ?? null,
+            'wordlist' => $validated['wordlist'] ?? null,
         ]);
 
         return response()->json($list, 201);
@@ -74,11 +88,15 @@ class ListController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'public' => ['sometimes', 'boolean'],
+            'notes' => ['nullable', 'string', 'max:65535'],
+            'wordlist' => ['nullable', 'string', 'max:16777215'],
         ]);
 
         $list->update([
             'name' => $validated['name'],
             'public' => (bool) ($validated['public'] ?? $list->public),
+            'notes' => array_key_exists('notes', $validated) ? $validated['notes'] : $list->notes,
+            'wordlist' => array_key_exists('wordlist', $validated) ? $validated['wordlist'] : $list->wordlist,
         ]);
 
         return response()->json($list);

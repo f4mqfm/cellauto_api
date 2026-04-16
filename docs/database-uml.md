@@ -2,7 +2,7 @@
 
 Ez a dokumentum a **cellauto** adatbázis **logikai modelljét** UML-szerű **osztálydiagram** formában foglalja össze (Mermaid). A részletes oszlopleírások és SQL a [`database-schema.md`](database-schema.md)-ben találhatók.
 
-**Verzió:** 1.1 · **Dátum:** 2026-04-14
+**Verzió:** 1.2 · **Dátum:** 2026-04-16
 
 ---
 
@@ -29,6 +29,9 @@ classDiagram
         +id: bigint
         +user_id: FK
         +name: string
+        +public: bool
+        +notes: string
+        +wordlist: string
     }
 
     class Word {
@@ -36,6 +39,13 @@ classDiagram
         +list_id: FK
         +generation: int
         +word: string
+    }
+
+    class WordRelation {
+        +id: bigint
+        +list_id: FK
+        +from_word_id: FK
+        +to_word_id: FK
     }
 
     class ColorList {
@@ -68,6 +78,9 @@ classDiagram
 
     User "1" --> "*" WordList : lists
     WordList "1" --> "*" Word : words
+    WordList "1" --> "*" WordRelation : wordRelations
+    Word "1" --> "*" WordRelation : fromRelations
+    Word "1" --> "*" WordRelation : toRelations
 
     User "1" --> "*" ColorList : colorLists
     ColorList "1" --> "*" Color : colors
@@ -79,7 +92,8 @@ classDiagram
 
 **Megjegyzések:**
 
-- `Word`: generáció-alapú; egyedi a `(list_id, generation, word)` és a `(list_id, position)` páros (lásd séma).
+- `Word`: generáció-alapú; egyedi a `(list_id, generation, word)` (lásd séma).
+- `WordRelation`: csak szomszédos generációk között értelmezett (GENn -> GENn+1), listán belül.
 - `Color`: egy színes listán belül egyedi a `(list_id, position)`.
 - `BoardSave`: egy csoporton belül egyedi a `name` (`board_save_group_id` + `name`).
 
@@ -93,6 +107,9 @@ Az alábbi **entity–relationship** diagram ugyanezt a modellt mutatja klasszik
 erDiagram
     users ||--o{ lists : "user_id"
     lists ||--o{ words : "list_id"
+    lists ||--o{ word_relations : "word_relations.list_id"
+    words ||--o{ word_relations : "word_relations.from_word_id"
+    words ||--o{ word_relations : "word_relations.to_word_id"
     users ||--o{ color_lists : "user_id"
     color_lists ||--o{ colors : "list_id"
     users ||--o{ board_save_groups : "user_id"

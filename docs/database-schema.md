@@ -12,6 +12,9 @@ Ez a dokumentum a **MySQL** adatbázis aktuális táblaszerkezetét mutatja. A t
 erDiagram
     users ||--o{ lists : "lists.user_id"
     lists ||--o{ words : "words.list_id"
+    lists ||--o{ word_relations : "word_relations.list_id"
+    words ||--o{ word_relations : "word_relations.from_word_id"
+    words ||--o{ word_relations : "word_relations.to_word_id"
     users ||--o{ access_logs : "access_logs.user_id"
     users ||--o{ color_lists : "color_lists.user_id"
     color_lists ||--o{ colors : "colors.list_id"
@@ -79,6 +82,9 @@ Felhasználóhoz tartozó szólisták (`WordList` modell táblája).
 | `id` | `bigint unsigned`, PK, AI | |
 | `user_id` | `bigint unsigned`, NOT NULL | FK → `users.id` |
 | `name` | `varchar(255)`, NOT NULL | |
+| `public` | `tinyint(1)`, NOT NULL, default `0` | publikus szólista (opcionális) |
+| `notes` | `text`, NULL | többsoros megjegyzés (admin) |
+| `wordlist` | `mediumtext`, NULL | szöveges blokk (pl. pontosvesszővel tagolt szavak; admin) |
 | `created_at` | `timestamp`, NULL | |
 | `updated_at` | `timestamp`, NULL | |
 
@@ -92,6 +98,9 @@ CREATE TABLE `lists` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `public` tinyint(1) NOT NULL DEFAULT '0',
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `wordlist` mediumtext COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -140,6 +149,26 @@ CREATE TABLE `words` (
 ```
 
 </details>
+
+---
+
+### `word_relations`
+
+Szó-relációk listán belül, csak szomszédos generációk között (GENn → GENn+1).
+
+| Oszlop | Típus | Megjegyzés |
+|--------|--------|------------|
+| `id` | `bigint unsigned`, PK, AI | |
+| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists.id` |
+| `from_word_id` | `bigint unsigned`, NOT NULL | FK → `words.id` (GENn) |
+| `to_word_id` | `bigint unsigned`, NOT NULL | FK → `words.id` (GENn+1) |
+| `created_at` | `timestamp`, NULL | |
+| `updated_at` | `timestamp`, NULL | |
+
+**Korlátok:**
+
+- `UNIQUE (list_id, from_word_id, to_word_id)` – `word_relations_unique`.
+- **FK**: `list_id` → `lists(id)`, `from_word_id` → `words(id)`, `to_word_id` → `words(id)` (**CASCADE** törlésekkel).
 
 ---
 

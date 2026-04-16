@@ -185,16 +185,41 @@ class WordController extends Controller
             'generations' => ['required', 'array', 'min:1'],
             'generations.*.generation' => ['required', 'integer', 'min:1'],
             'generations.*.words' => ['required', 'array', 'min:1'],
-            'generations.*.words.*' => ['required', 'string', 'max:255', 'distinct'],
+            'generations.*.words.*' => ['required', 'string', 'max:255'],
         ]);
 
-        $items = collect($validated['generations'])->sortBy('generation')->values();
+        $items = collect($validated['generations'])->sortBy('generation')->values()->map(function (array $item) {
+            $seen = [];
+            $words = [];
+            foreach ($item['words'] as $value) {
+                $t = preg_replace('/\s+/u', ' ', trim((string) $value));
+                if ($t === '') {
+                    continue;
+                }
+                if (isset($seen[$t])) {
+                    continue;
+                }
+                $seen[$t] = true;
+                $words[] = $t;
+            }
+
+            return [
+                'generation' => (int) $item['generation'],
+                'words' => $words,
+            ];
+        })->values();
+
         $expectedGeneration = 1;
 
         foreach ($items as $item) {
             if ((int) $item['generation'] !== $expectedGeneration) {
                 return response()->json([
                     'error' => 'A generációk csak 1-től N-ig folytonosan adhatók meg',
+                ], 422);
+            }
+            if (count($item['words']) < 1) {
+                return response()->json([
+                    'error' => 'Minden generációhoz legalább egy szó kell (duplikátumok nélkül).',
                 ], 422);
             }
 
@@ -209,7 +234,7 @@ class WordController extends Controller
                     Word::create([
                         'list_id' => $list->id,
                         'generation' => (int) $item['generation'],
-                        'word' => trim($value),
+                        'word' => $value,
                     ]);
                 }
             }

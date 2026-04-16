@@ -116,6 +116,8 @@ Lásd: `app/Http/Controllers/AuthController.php`
 
 ## Adatmodell – lists / words
 
+A `lists` tábla opcionálisan tartalmaz `notes` (többsoros megjegyzés) és `wordlist` (nagy szövegblokk, admin által szerkesztett, pl. pontosvesszővel tagolt szavak) mezőket; az API csak tárolja őket. Migráció: `2026_04_16_160000_add_notes_and_wordlist_text_to_lists_table.php`.
+
 A `words` tábla generáció-alapú: `generation` mezővel kezeli a `GEN1..GENN` szinteket. Egy szó azonos listában és azonos generációban egyedi (`UNIQUE(list_id, generation, word)`). Részletek és API: `docs/api-lists-words.md`. Séma bővítés migrációk: `database/migrations/2026_04_14_120000_add_generation_to_words_table.php`, `database/migrations/2026_04_14_130000_drop_position_from_words_table.php`.
 
 ## Adatmodell – táblaállapot mentések (`board_save_groups`, `board_saves`)
