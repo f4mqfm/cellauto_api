@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\TaskSaveLevel;
 use App\Http\Controllers\Controller;
 use App\Models\TaskSave;
 use App\Models\TaskSaveGroup;
@@ -37,7 +38,7 @@ class TaskSaveController extends Controller
             return response()->json(['error' => 'Nincs jogosultság'], 403);
         }
 
-        return $task_save_group->saves()->get();
+        return $task_save_group->saves()->with('user:id,name,username,email')->get();
     }
 
     public function store(Request $request, TaskSaveGroup $task_save_group)
@@ -55,6 +56,7 @@ class TaskSaveController extends Controller
                     fn ($q) => $q->where('task_save_group_id', $task_save_group->id)
                 ),
             ],
+            'level' => ['required', Rule::enum(TaskSaveLevel::class)],
             'generation_mode' => ['required', Rule::in(['square_lateral', 'square_apex', 'hexagonal'])],
             'board_size' => ['required', 'integer', 'min:1'],
             'generations_count' => ['required', 'integer', 'min:1'],
@@ -76,6 +78,7 @@ class TaskSaveController extends Controller
             'task_save_group_id' => $task_save_group->id,
             'word_list_id' => $validated['word_list_id'] ?? null,
             'name' => $validated['name'],
+            'level' => $validated['level'],
             'generation_mode' => $validated['generation_mode'],
             'board_size' => (int) $validated['board_size'],
             'generations_count' => (int) $validated['generations_count'],
@@ -95,6 +98,8 @@ class TaskSaveController extends Controller
         if ($save->task_save_group_id !== $task_save_group->id || $save->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Nincs találat'], 404);
         }
+
+        $save->loadMissing('user:id,name,username,email');
 
         return $save;
     }
@@ -120,6 +125,7 @@ class TaskSaveController extends Controller
                     )
                     ->ignore($save->id),
             ],
+            'level' => ['required', Rule::enum(TaskSaveLevel::class)],
             'generation_mode' => ['required', Rule::in(['square_lateral', 'square_apex', 'hexagonal'])],
             'board_size' => ['required', 'integer', 'min:1'],
             'generations_count' => ['required', 'integer', 'min:1'],
@@ -139,6 +145,7 @@ class TaskSaveController extends Controller
         $save->update([
             'word_list_id' => $validated['word_list_id'] ?? null,
             'name' => $validated['name'],
+            'level' => $validated['level'],
             'generation_mode' => $validated['generation_mode'],
             'board_size' => (int) $validated['board_size'],
             'generations_count' => (int) $validated['generations_count'],

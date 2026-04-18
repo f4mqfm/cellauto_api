@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TaskSaveLevel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,6 +14,7 @@ class TaskSave extends Model
         'task_save_group_id',
         'word_list_id',
         'name',
+        'level',
         'generation_mode',
         'board_size',
         'generations_count',
@@ -23,6 +25,7 @@ class TaskSave extends Model
     protected function casts(): array
     {
         return [
+            'level' => TaskSaveLevel::class,
             'word_list_id' => 'integer',
             'board_size' => 'integer',
             'generations_count' => 'integer',

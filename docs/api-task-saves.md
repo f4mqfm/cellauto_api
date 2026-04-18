@@ -49,6 +49,7 @@ Body:
 ```json
 {
   "name": "Feladat 1",
+  "level": "Medium",
   "generation_mode": "square_lateral",
   "board_size": 31,
   "generations_count": 5,
@@ -64,6 +65,7 @@ Body:
 
 ### Kötelező szabályok
 
+- `level`: nehézség (enum) – pontosan `Easy` \| `Medium` \| `Hard`
 - `generation_mode`: `square_lateral` | `square_apex` | `hexagonal`
 - `board_size`: pozitív egész
 - `generations_count`: pozitív egész
@@ -97,9 +99,15 @@ Body:
 {
   "date": "2026-04-17 10:30:00",
   "note": "Első próbálkozás",
+  "filled_board": {
+    "cells": [
+      { "x": 1, "y": 2, "v": 1 }
+    ]
+  },
   "total_good_cell": 120,
   "good_cell": 95,
   "bad_cell": 25,
+  "unfilled_cell": 10,
   "possible_sentence": 30,
   "good_sentence": 18,
   "bad_sentence": 12,
@@ -107,8 +115,11 @@ Body:
 }
 ```
 
+- `filled_board`: kötelező JSON objektum (a táblán kiöltött állapot); a pontos szerkezetet a kliens határozza meg (tipikusan megegyezhet a task save `payload`-jával, pl. `cells` tömb).
+- `unfilled_cell`: nem kitöltött cellák száma (nem negatív egész).
+
 ### PUT `/api/task-saves/{task_save}/evaluations/{task_evaluation}`
-Értékelés frissítése (saját vagy admin).
+Értékelés frissítése (saját vagy admin). Ugyanazok a mezők, mint POST-nál (`filled_board` kötelező).
 
 ### DELETE `/api/task-saves/{task_save}/evaluations/{task_evaluation}`
 Értékelés törlése (saját vagy admin).

@@ -12,9 +12,11 @@ class TaskEvaluation extends Model
         'user_id',
         'date',
         'note',
+        'filled_board',
         'total_good_cell',
         'good_cell',
         'bad_cell',
+        'unfilled_cell',
         'possible_sentence',
         'good_sentence',
         'bad_sentence',
@@ -25,9 +27,11 @@ class TaskEvaluation extends Model
     {
         return [
             'date' => 'datetime',
+            'filled_board' => 'array',
             'total_good_cell' => 'integer',
             'good_cell' => 'integer',
             'bad_cell' => 'integer',
+            'unfilled_cell' => 'integer',
             'possible_sentence' => 'integer',
             'good_sentence' => 'integer',
             'bad_sentence' => 'integer',
