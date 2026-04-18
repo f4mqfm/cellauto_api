@@ -48,6 +48,14 @@ classDiagram
         +to_word_id: FK
     }
 
+    class WordGenMessage {
+        +id: bigint
+        +list_id: FK
+        +generation: int
+        +correct_answer_message: string
+        +incorrect_answer_message: string
+    }
+
     class ColorList {
         +id: bigint
         +user_id: FK
@@ -78,6 +86,7 @@ classDiagram
 
     User "1" --> "*" WordList : lists
     WordList "1" --> "*" Word : words
+    WordList "1" --> "*" WordGenMessage : wordGenMessages
     WordList "1" --> "*" WordRelation : wordRelations
     Word "1" --> "*" WordRelation : fromRelations
     Word "1" --> "*" WordRelation : toRelations
@@ -93,6 +102,7 @@ classDiagram
 **Megjegyzések:**
 
 - `Word`: generáció-alapú; egyedi a `(list_id, generation, word)` (lásd séma).
+- `WordGenMessage`: generációnként opcionális helyes/helytelen válasz szöveg a listához (`UNIQUE(list_id, generation)`).
 - `WordRelation`: csak szomszédos generációk között értelmezett (GENn -> GENn+1), listán belül.
 - `Color`: egy színes listán belül egyedi a `(list_id, position)`.
 - `BoardSave`: egy csoporton belül egyedi a `name` (`board_save_group_id` + `name`).
@@ -105,9 +115,10 @@ Az alábbi **entity–relationship** diagram ugyanezt a modellt mutatja klasszik
 
 ```mermaid
 erDiagram
-    users ||--o{ lists : "user_id"
-    lists ||--o{ words : "list_id"
-    lists ||--o{ word_relations : "word_relations.list_id"
+    users ||--o{ lists_word : "user_id"
+    lists_word ||--o{ words : "list_id"
+    lists_word ||--o{ word_gen_messages : "list_id"
+    lists_word ||--o{ word_relations : "word_relations.list_id"
     words ||--o{ word_relations : "word_relations.from_word_id"
     words ||--o{ word_relations : "word_relations.to_word_id"
     users ||--o{ color_lists : "user_id"

@@ -24,10 +24,10 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-	'username',
-    	'role',
-    	'active',
-    	'suspended_at',
+        'username',
+        'role',
+        'active',
+        'suspended_at',
     ];
 
     /**
@@ -66,5 +66,20 @@ class User extends Authenticatable
     public function accessLogs(): HasMany
     {
         return $this->hasMany(AccessLog::class, 'user_id');
+    }
+
+    public function taskSaveGroups(): HasMany
+    {
+        return $this->hasMany(TaskSaveGroup::class, 'user_id');
+    }
+
+    public function taskSaves(): HasMany
+    {
+        return $this->hasMany(TaskSave::class, 'user_id');
+    }
+
+    public function taskEvaluations(): HasMany
+    {
+        return $this->hasMany(TaskEvaluation::class, 'user_id');
     }
 }

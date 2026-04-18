@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WordList extends Model
 {
-    protected $table = 'lists';
+    protected $table = 'lists_word';
 
     protected $fillable = [
         'user_id',
@@ -37,5 +37,10 @@ class WordList extends Model
             ->orderBy('word')
             ->orderBy('id');
     }
-}
 
+    public function wordGenMessages(): HasMany
+    {
+        return $this->hasMany(WordGenMessage::class, 'list_id')
+            ->orderBy('generation');
+    }
+}

@@ -1,13 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\AccessLogController;
 use App\Http\Controllers\Api\BoardSaveController;
 use App\Http\Controllers\Api\BoardSaveGroupController;
 use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\ColorListController;
-use App\Http\Controllers\Api\AccessLogController;
 use App\Http\Controllers\Api\ListController;
+use App\Http\Controllers\Api\TaskEvaluationController;
+use App\Http\Controllers\Api\TaskSaveController;
+use App\Http\Controllers\Api\TaskSaveGroupController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\WordController;
+use App\Http\Controllers\Api\WordGenMessageController;
 use App\Http\Controllers\Api\WordRelationController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
@@ -23,7 +27,7 @@ Route::get('/ping', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/access-logs/visit', [AccessLogController::class, 'storeVisit']);
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/access-logs/me', [AccessLogController::class, 'myLogs']);
     Route::get('/users', [UserController::class, 'index']);
@@ -43,6 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lists/{list}/words', [WordController::class, 'index']);
     Route::post('/lists/{list}/words', [WordController::class, 'store']);
     Route::put('/lists/{list}/word-generations', [WordController::class, 'replaceGenerations']);
+    Route::get('/lists/{list}/word-gen-messages', [WordGenMessageController::class, 'index']);
+    Route::put('/lists/{list}/word-gen-messages', [WordGenMessageController::class, 'replace']);
     Route::put('/lists/{list}/words/{word}', [WordController::class, 'update']);
     Route::delete('/lists/{list}/words/{word}', [WordController::class, 'destroy']);
 
@@ -67,9 +73,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // Táblaállapot mentések (docs/api-board-saves.md)
     Route::apiResource('board-save-groups', BoardSaveGroupController::class);
     Route::apiResource('board-save-groups.saves', BoardSaveController::class);
+
+    // Feladat mentések (task_save_groups + task_saves + task_evaluations)
+    Route::apiResource('task-save-groups', TaskSaveGroupController::class);
+    Route::apiResource('task-save-groups.saves', TaskSaveController::class);
+    Route::get('/task-saves/{task_save}/evaluations', [TaskEvaluationController::class, 'index']);
+    Route::post('/task-saves/{task_save}/evaluations', [TaskEvaluationController::class, 'store']);
+    Route::put('/task-saves/{task_save}/evaluations/{task_evaluation}', [TaskEvaluationController::class, 'update']);
+    Route::delete('/task-saves/{task_save}/evaluations/{task_evaluation}', [TaskEvaluationController::class, 'destroy']);
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+Route::middleware(['auth:sanctum', 'active-session', 'admin'])->group(function () {
     Route::get('/admin/users/online-status', [UserController::class, 'onlineStatus']);
     Route::get('/access-logs', [AccessLogController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);

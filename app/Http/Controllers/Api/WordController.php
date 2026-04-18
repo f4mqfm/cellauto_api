@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Word;
+use App\Models\WordGenMessage;
 use App\Models\WordList;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -238,9 +239,14 @@ class WordController extends Controller
                     ]);
                 }
             }
+
+            $keptGenerations = $items->pluck('generation')->map(fn ($g) => (int) $g)->all();
+            WordGenMessage::query()
+                ->where('list_id', $list->id)
+                ->whereNotIn('generation', $keptGenerations)
+                ->delete();
         });
 
         return $this->index($request, $list);
     }
 }
-

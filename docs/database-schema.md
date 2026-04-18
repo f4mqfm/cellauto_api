@@ -10,9 +10,10 @@ Ez a dokumentum a **MySQL** adatbázis aktuális táblaszerkezetét mutatja. A t
 
 ```mermaid
 erDiagram
-    users ||--o{ lists : "lists.user_id"
-    lists ||--o{ words : "words.list_id"
-    lists ||--o{ word_relations : "word_relations.list_id"
+    users ||--o{ lists_word : "lists_word.user_id"
+    lists_word ||--o{ words : "words.list_id"
+    lists_word ||--o{ word_gen_messages : "word_gen_messages.list_id"
+    lists_word ||--o{ word_relations : "word_relations.list_id"
     words ||--o{ word_relations : "word_relations.from_word_id"
     words ||--o{ word_relations : "word_relations.to_word_id"
     users ||--o{ access_logs : "access_logs.user_id"
@@ -73,7 +74,7 @@ CREATE TABLE `users` (
 
 ---
 
-### `lists`
+### `lists_word`
 
 Felhasználóhoz tartozó szólisták (`WordList` modell táblája).
 
@@ -91,10 +92,10 @@ Felhasználóhoz tartozó szólisták (`WordList` modell táblája).
 **Indexek / kulcsok:** `PRIMARY KEY (id)`, index `fk_lists_user (user_id)`, **FK** `fk_lists_user`: `user_id` → `users(id)`.
 
 <details>
-<summary>SHOW CREATE TABLE (lists)</summary>
+<summary>SHOW CREATE TABLE (lists_word)</summary>
 
 ```sql
-CREATE TABLE `lists` (
+CREATE TABLE `lists_word` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `user_id` bigint unsigned NOT NULL,
   `name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -120,7 +121,7 @@ Egy szólista elemei: generáció + szó.
 | Oszlop | Típus | Megjegyzés |
 |--------|--------|------------|
 | `id` | `bigint unsigned`, PK, AI | |
-| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists.id` |
+| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists_word.id` |
 | `generation` | `int unsigned`, NOT NULL, default `1` | GEN1..GENN szint |
 | `word` | `varchar(255)`, NOT NULL | |
 | `created_at` | `timestamp`, NULL | |
@@ -129,7 +130,7 @@ Egy szólista elemei: generáció + szó.
 **Korlátok:**
 
 - `UNIQUE (list_id, generation, word)` – `words_list_generation_word_unique`.
-- **FK** `fk_words_list`: `list_id` → `lists(id)`.
+- **FK** `fk_words_list`: `list_id` → `lists_word(id)`.
 
 <details>
 <summary>SHOW CREATE TABLE (words)</summary>
@@ -144,7 +145,45 @@ CREATE TABLE `words` (
   `updated_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `words_list_generation_word_unique` (`list_id`,`generation`,`word`),
-  CONSTRAINT `fk_words_list` FOREIGN KEY (`list_id`) REFERENCES `lists` (`id`)
+  CONSTRAINT `fk_words_list` FOREIGN KEY (`list_id`) REFERENCES `lists_word` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+</details>
+
+---
+
+### `word_gen_messages`
+
+Generációnként (GEN1..GENn) tárolt szövegek: helyes / helytelen válaszhoz (a kliens használja fel).
+
+| Oszlop | Típus | Megjegyzés |
+|--------|--------|------------|
+| `id` | `bigint unsigned`, PK, AI | |
+| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists_word.id` |
+| `generation` | `int unsigned`, NOT NULL | GEN sorszám, listán belül egyedi |
+| `correct_answer_message` | `text`, NULL | |
+| `incorrect_answer_message` | `text`, NULL | |
+| `created_at` | `timestamp`, NULL | |
+| `updated_at` | `timestamp`, NULL | |
+
+**Korlátok:** `UNIQUE (list_id, generation)` – `word_gen_messages_list_generation_unique`. **FK:** `list_id` → `lists_word(id)` (**CASCADE** törlés listával).
+
+<details>
+<summary>CREATE TABLE (illusztráció)</summary>
+
+```sql
+CREATE TABLE `word_gen_messages` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `list_id` bigint unsigned NOT NULL,
+  `generation` int unsigned NOT NULL,
+  `correct_answer_message` text COLLATE utf8mb4_unicode_ci,
+  `incorrect_answer_message` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `word_gen_messages_list_generation_unique` (`list_id`,`generation`),
+  CONSTRAINT `word_gen_messages_list_id_foreign` FOREIGN KEY (`list_id`) REFERENCES `lists_word` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
@@ -159,7 +198,7 @@ Szó-relációk listán belül, csak szomszédos generációk között (GENn →
 | Oszlop | Típus | Megjegyzés |
 |--------|--------|------------|
 | `id` | `bigint unsigned`, PK, AI | |
-| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists.id` |
+| `list_id` | `bigint unsigned`, NOT NULL | FK → `lists_word.id` |
 | `from_word_id` | `bigint unsigned`, NOT NULL | FK → `words.id` (GENn) |
 | `to_word_id` | `bigint unsigned`, NOT NULL | FK → `words.id` (GENn+1) |
 | `created_at` | `timestamp`, NULL | |
@@ -475,8 +514,8 @@ CREATE TABLE `migrations` (
 
 | Tábla | FK név | Oszlop | Hivatkozás |
 |--------|--------|--------|------------|
-| `lists` | `fk_lists_user` | `user_id` | `users(id)` |
-| `words` | `fk_words_list` | `list_id` | `lists(id)` |
+| `lists_word` | `fk_lists_user` | `user_id` | `users(id)` |
+| `words` | `fk_words_list` | `list_id` | `lists_word(id)` |
 | `access_logs` | `access_logs_user_id_foreign` | `user_id` | `users(id)` |
 | `color_lists` | `fk_color_lists_user` | `user_id` | `users(id)` |
 | `colors` | `fk_colors_list` | `list_id` | `color_lists(id)` |

@@ -20,7 +20,7 @@ Az adatbázis a sejtautomata API **perzisztens rétege**: felhasználók, azokho
 
 **Benne van:**
 
-- Üzleti / domain táblák: `users`, `lists`, `words`, `color_lists`, `colors`, `board_save_groups`, `board_saves`.
+- Üzleti / domain táblák: `users`, `lists_word`, `words`, `word_gen_messages`, `color_lists`, `colors`, `board_save_groups`, `board_saves`.
 - Infrastruktúra táblák: `migrations`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs`, `password_reset_tokens`, `personal_access_tokens`.
 
 **Kívül esik:**
@@ -57,7 +57,7 @@ Az adatbázis a sejtautomata API **perzisztens rétege**: felhasználók, azokho
 | Mező | Érték |
 |------|--------|
 | **Szerep** | Központi identitás: bejelentkezés, szerepkör (`role`), aktív/felfüggesztett állapot (`suspended_at`), egyedi `username` és `email`. |
-| **Kapcsolatok** | 1:N minden userhez kötött erőforráshoz (`lists`, `color_lists`, `board_save_groups`, közvetve `words`/`colors`, közvetlenül `board_saves`). |
+| **Kapcsolatok** | 1:N minden userhez kötött erőforráshoz (`lists_word`, `color_lists`, `board_save_groups`, közvetve `words`/`colors`, közvetlenül `board_saves`). |
 | **Kulcs követelmények** | PK `id`; **UNIQUE** `email`, **UNIQUE** `username`. |
 
 | Azonosító | Követelmény |
@@ -66,12 +66,12 @@ Az adatbázis a sejtautomata API **perzisztens rétege**: felhasználók, azokho
 
 ---
 
-### 3.2 `lists` – szólisták
+### 3.2 `lists_word` – szólisták
 
 | Mező | Érték |
 |------|--------|
 | **Szerep** | Egy felhasználó **nev szerinti szólistái** (pl. tantárgyanként, feladatanként). |
-| **Kapcsolatok** | `user_id` → `users.id`; 1:N a `words` táblára. |
+| **Kapcsolatok** | `user_id` → `users.id`; 1:N a `words` és a `word_gen_messages` táblákra. |
 | **Kulcs követelmények** | PK `id`; FK `user_id` → `users(id)`. |
 
 | Azonosító | Követelmény |
@@ -85,13 +85,25 @@ Az adatbázis a sejtautomata API **perzisztens rétege**: felhasználók, azokho
 | Mező | Érték |
 |------|--------|
 | **Szerep** | A szólista elemei **generációkba** (`GEN1..GENN`) szervezve: szöveg. |
-| **Kapcsolatok** | `list_id` → `lists.id`. |
+| **Kapcsolatok** | `list_id` → `lists_word.id`. |
 | **Kulcs követelmények** | **UNIQUE** `(list_id, generation, word)`; FK `list_id`. |
 
 | Azonosító | Követelmény |
 |-----------|-------------|
 | **DB-WORD-01** | Ugyanaz a szöveg nem duplikálható ugyanabban a listában **és generációban**. |
 | **DB-WORD-02** | A generációk 1-től N-ig folytonosan kezelendők; minden generációban legalább egy szó kötelező. |
+
+### 3.3.1 `word_gen_messages` – generációs visszajelző szövegek (szólistához)
+
+| Mező | Érték |
+|------|--------|
+| **Szerep** | Generációnként (GEN1..GENn) két opcionális szöveg: helyes / helytelen válasz üzenet. |
+| **Kapcsolatok** | `list_id` → `lists_word.id` (CASCADE listatörléskor). |
+| **Kulcs követelmények** | **UNIQUE** `(list_id, generation)`; a `generation` a listához tartozó `words` generációinak feleljen meg. |
+
+| Azonosító | Követelmény |
+|-----------|-------------|
+| **DB-WORDMSG-01** | Ugyanahhoz a listához ugyanaz a generációszám csak egy üzenetsorban szerepelhet. |
 
 ---
 
@@ -160,8 +172,9 @@ A következő entitás-kapcsolatok **követelményként** érvényesek (egyezik 
 
 ```mermaid
 erDiagram
-    users ||--o{ lists : user_id
-    lists ||--o{ words : list_id
+    users ||--o{ lists_word : user_id
+    lists_word ||--o{ words : list_id
+    lists_word ||--o{ word_gen_messages : list_id
     users ||--o{ color_lists : user_id
     color_lists ||--o{ colors : list_id
     users ||--o{ board_save_groups : user_id
@@ -194,8 +207,9 @@ Ezek **nem** az üzleti domain részei, hanem a Laravel futásához / API auth-h
 
 | Forrás tábla | Oszlop | Cél | Megjegyzés |
 |--------------|--------|-----|------------|
-| `lists` | `user_id` | `users.id` | |
-| `words` | `list_id` | `lists.id` | |
+| `lists_word` | `user_id` | `users.id` | |
+| `words` | `list_id` | `lists_word.id` | |
+| `word_gen_messages` | `list_id` | `lists_word.id` | ON DELETE CASCADE |
 | `color_lists` | `user_id` | `users.id` | |
 | `colors` | `list_id` | `color_lists.id` | |
 | `board_save_groups` | `user_id` | `users.id` | ON DELETE CASCADE |
