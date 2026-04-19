@@ -111,12 +111,16 @@ Body:
   "possible_sentence": 30,
   "good_sentence": 18,
   "bad_sentence": 12,
+  "duplicate_sentence": 5,
+  "sentence_result": "Helyes: A B C; hibás: …",
   "completed_time": 87
 }
 ```
 
 - `filled_board`: kötelező JSON objektum (a táblán kiöltött állapot); a pontos szerkezetet a kliens határozza meg (tipikusan megegyezhet a task save `payload`-jával, pl. `cells` tömb).
 - `unfilled_cell`: nem kitöltött cellák száma (nem negatív egész).
+- `duplicate_sentence`: duplikált mondatok száma (nem negatív egész), a `possible_sentence` / `good_sentence` / `bad_sentence` mezőkkel együtt értelmezhető.
+- `sentence_result`: opcionális szöveg (többsoros lehet); mondatokra vonatkozó összegző / részletes eredmény (szerkezetét a kliens határozza meg).
 
 ### PUT `/api/task-saves/{task_save}/evaluations/{task_evaluation}`
 Értékelés frissítése (saját vagy admin). Ugyanazok a mezők, mint POST-nál (`filled_board` kötelező).

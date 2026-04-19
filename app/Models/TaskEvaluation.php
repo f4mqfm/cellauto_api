@@ -20,6 +20,8 @@ class TaskEvaluation extends Model
         'possible_sentence',
         'good_sentence',
         'bad_sentence',
+        'duplicate_sentence',
+        'sentence_result',
         'completed_time',
     ];
 
@@ -35,6 +37,7 @@ class TaskEvaluation extends Model
             'possible_sentence' => 'integer',
             'good_sentence' => 'integer',
             'bad_sentence' => 'integer',
+            'duplicate_sentence' => 'integer',
             'completed_time' => 'integer',
         ];
     }

@@ -14,6 +14,7 @@ class TaskEvaluationController extends Controller
         return $request->validate([
             'date' => ['required', 'date'],
             'note' => ['nullable', 'string'],
+            'sentence_result' => ['nullable', 'string'],
             'filled_board' => ['required', 'array'],
             'total_good_cell' => ['required', 'integer', 'min:0'],
             'good_cell' => ['required', 'integer', 'min:0'],
@@ -22,6 +23,7 @@ class TaskEvaluationController extends Controller
             'possible_sentence' => ['required', 'integer', 'min:0'],
             'good_sentence' => ['required', 'integer', 'min:0'],
             'bad_sentence' => ['required', 'integer', 'min:0'],
+            'duplicate_sentence' => ['required', 'integer', 'min:0'],
             'completed_time' => ['required', 'integer', 'min:0'],
         ]);
     }
@@ -48,6 +50,7 @@ class TaskEvaluationController extends Controller
             'user_id' => $request->user()->id,
             'date' => $validated['date'],
             'note' => $validated['note'] ?? null,
+            'sentence_result' => $validated['sentence_result'] ?? null,
             'filled_board' => $validated['filled_board'],
             'total_good_cell' => (int) $validated['total_good_cell'],
             'good_cell' => (int) $validated['good_cell'],
@@ -56,6 +59,7 @@ class TaskEvaluationController extends Controller
             'possible_sentence' => (int) $validated['possible_sentence'],
             'good_sentence' => (int) $validated['good_sentence'],
             'bad_sentence' => (int) $validated['bad_sentence'],
+            'duplicate_sentence' => (int) $validated['duplicate_sentence'],
             'completed_time' => (int) $validated['completed_time'],
         ]);
 
@@ -79,6 +83,7 @@ class TaskEvaluationController extends Controller
         $task_evaluation->update([
             'date' => $validated['date'],
             'note' => $validated['note'] ?? null,
+            'sentence_result' => $validated['sentence_result'] ?? null,
             'filled_board' => $validated['filled_board'],
             'total_good_cell' => (int) $validated['total_good_cell'],
             'good_cell' => (int) $validated['good_cell'],
@@ -87,6 +92,7 @@ class TaskEvaluationController extends Controller
             'possible_sentence' => (int) $validated['possible_sentence'],
             'good_sentence' => (int) $validated['good_sentence'],
             'bad_sentence' => (int) $validated['bad_sentence'],
+            'duplicate_sentence' => (int) $validated['duplicate_sentence'],
             'completed_time' => (int) $validated['completed_time'],
         ]);
 
