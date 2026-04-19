@@ -33,8 +33,8 @@ class TaskEvaluationController extends Controller
         $query = $task_save->evaluations()->with('user:id,name,email,username,role');
 
         $isOwner = (int) $task_save->user_id === (int) $request->user()->id;
-        $isAdmin = $request->user()->role === 'admin';
-        if (! $isOwner && ! $isAdmin) {
+        $isStaff = in_array($request->user()->role, ['admin', 'tanar'], true);
+        if (! $isOwner && ! $isStaff) {
             $query->where('user_id', $request->user()->id);
         }
 

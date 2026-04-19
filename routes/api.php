@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\BoardSaveGroupController;
 use App\Http\Controllers\Api\ColorController;
 use App\Http\Controllers\Api\ColorListController;
 use App\Http\Controllers\Api\ListController;
+use App\Http\Controllers\Api\StaffTaskEvaluationController;
 use App\Http\Controllers\Api\TaskEvaluationController;
 use App\Http\Controllers\Api\TaskSaveController;
 use App\Http\Controllers\Api\TaskSaveGroupController;
@@ -81,6 +82,11 @@ Route::middleware(['auth:sanctum', 'active-session'])->group(function () {
     Route::post('/task-saves/{task_save}/evaluations', [TaskEvaluationController::class, 'store']);
     Route::put('/task-saves/{task_save}/evaluations/{task_evaluation}', [TaskEvaluationController::class, 'update']);
     Route::delete('/task-saves/{task_save}/evaluations/{task_evaluation}', [TaskEvaluationController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'active-session', 'staff'])->group(function () {
+    Route::get('/staff/task-evaluations', [StaffTaskEvaluationController::class, 'index']);
+    Route::get('/staff/task-evaluations/{task_evaluation}', [StaffTaskEvaluationController::class, 'show']);
 });
 
 Route::middleware(['auth:sanctum', 'active-session', 'admin'])->group(function () {
