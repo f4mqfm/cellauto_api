@@ -11,7 +11,6 @@ class TaskSaveGroupController extends Controller
     public function index(Request $request)
     {
         return TaskSaveGroup::query()
-            ->where('user_id', $request->user()->id)
             ->orderBy('position')
             ->orderBy('id')
             ->get();
@@ -35,10 +34,6 @@ class TaskSaveGroupController extends Controller
 
     public function show(Request $request, TaskSaveGroup $task_save_group)
     {
-        if ($task_save_group->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Nincs jogosultság'], 403);
-        }
-
         return $task_save_group;
     }
 

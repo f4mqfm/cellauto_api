@@ -11,17 +11,12 @@ class ColorListController extends Controller
     public function index(Request $request)
     {
         return ColorList::query()
-            ->where('user_id', $request->user()->id)
             ->orderBy('id', 'desc')
             ->get();
     }
 
     public function show(Request $request, ColorList $color_list)
     {
-        if ($color_list->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Nincs jogosultság'], 403);
-        }
-
         return $color_list->load('colors');
     }
 

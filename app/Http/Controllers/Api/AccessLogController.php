@@ -11,26 +11,12 @@ class AccessLogController extends Controller
 {
     private function resolveClientIp(Request $request): string
     {
-        $candidates = [];
-
-        $xff = (string) ($request->header('X-Forwarded-For') ?? '');
-        if ($xff !== '') {
-            $parts = array_map('trim', explode(',', $xff));
-            foreach ($parts as $ip) {
-                if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
-                    $candidates[] = $ip;
-                }
+        // trustProxies mellett a Symfony Request már helyesen rendezi a láncot
+        // (balról a kliens, jobbra a proxik). Először publikus címet keresünk.
+        foreach ($request->ips() as $ip) {
+            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+                continue;
             }
-        }
-
-        foreach (['CF-Connecting-IP', 'True-Client-IP', 'X-Real-IP'] as $header) {
-            $value = (string) ($request->header($header) ?? '');
-            if ($value !== '' && filter_var($value, FILTER_VALIDATE_IP)) {
-                $candidates[] = $value;
-            }
-        }
-
-        foreach ($candidates as $ip) {
             if ($ip === '127.0.0.1' || $ip === '::1') {
                 continue;
             }
@@ -39,13 +25,36 @@ class AccessLogController extends Controller
             }
         }
 
-        foreach ($candidates as $ip) {
-            if ($ip !== '127.0.0.1' && $ip !== '::1') {
+        // Ha csak belső címek vannak (intranet/proxy), akkor is legyen mentett IP.
+        foreach ($request->ips() as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP) && $ip !== '127.0.0.1' && $ip !== '::1') {
                 return $ip;
             }
         }
 
-        return $request->ip() ?? 'unknown';
+        // Bizonyos reverse proxy/CDN setupnál ezek a headerek tartalmazzák a kliens IP-t.
+        foreach (['CF-Connecting-IP', 'True-Client-IP', 'X-Real-IP', 'X-Forwarded-For'] as $header) {
+            $raw = (string) ($request->header($header) ?? '');
+            if ($raw === '') {
+                continue;
+            }
+
+            foreach (array_map('trim', explode(',', $raw)) as $candidate) {
+                if ($candidate === '127.0.0.1' || $candidate === '::1') {
+                    continue;
+                }
+                if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                    return $candidate;
+                }
+            }
+        }
+
+        $ip = $request->getClientIp();
+        if (is_string($ip) && $ip !== '') {
+            return $ip;
+        }
+
+        return 'unknown';
     }
 
     public function storeVisit(Request $request)

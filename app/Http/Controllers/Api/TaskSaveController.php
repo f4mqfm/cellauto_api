@@ -34,10 +34,6 @@ class TaskSaveController extends Controller
 
     public function index(Request $request, TaskSaveGroup $task_save_group)
     {
-        if ($task_save_group->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Nincs jogosultság'], 403);
-        }
-
         return $task_save_group->saves()->with('user:id,name,username,email')->get();
     }
 
@@ -91,11 +87,7 @@ class TaskSaveController extends Controller
 
     public function show(Request $request, TaskSaveGroup $task_save_group, TaskSave $save)
     {
-        if ($task_save_group->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Nincs jogosultság'], 403);
-        }
-
-        if ($save->task_save_group_id !== $task_save_group->id || $save->user_id !== $request->user()->id) {
+        if ($save->task_save_group_id !== $task_save_group->id) {
             return response()->json(['error' => 'Nincs találat'], 404);
         }
 

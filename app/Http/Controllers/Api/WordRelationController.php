@@ -11,9 +11,14 @@ use Illuminate\Support\Facades\DB;
 
 class WordRelationController extends Controller
 {
+    private function canReadList(Request $request, WordList $list): bool
+    {
+        return (int) $list->user_id === (int) $request->user()->id || (bool) $list->public;
+    }
+
     public function index(Request $request, WordList $list)
     {
-        if ($list->user_id !== $request->user()->id) {
+        if (! $this->canReadList($request, $list)) {
             return response()->json(['error' => 'Nincs jogosultság'], 403);
         }
 

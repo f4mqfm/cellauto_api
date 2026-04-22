@@ -11,22 +11,46 @@ class AuthController extends Controller
 {
     private function resolveClientIp(Request $request): string
     {
-        $xff = (string) ($request->header('X-Forwarded-For') ?? '');
-        if ($xff !== '') {
-            $parts = array_map('trim', explode(',', $xff));
-            foreach ($parts as $ip) {
-                if ($ip !== '' && filter_var($ip, FILTER_VALIDATE_IP)) {
-                    return $ip;
+        foreach ($request->ips() as $ip) {
+            if (! filter_var($ip, FILTER_VALIDATE_IP)) {
+                continue;
+            }
+            if ($ip === '127.0.0.1' || $ip === '::1') {
+                continue;
+            }
+            if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return $ip;
+            }
+        }
+
+        foreach ($request->ips() as $ip) {
+            if (filter_var($ip, FILTER_VALIDATE_IP) && $ip !== '127.0.0.1' && $ip !== '::1') {
+                return $ip;
+            }
+        }
+
+        foreach (['CF-Connecting-IP', 'True-Client-IP', 'X-Real-IP', 'X-Forwarded-For'] as $header) {
+            $raw = (string) ($request->header($header) ?? '');
+            if ($raw === '') {
+                continue;
+            }
+
+            foreach (array_map('trim', explode(',', $raw)) as $candidate) {
+                if ($candidate === '127.0.0.1' || $candidate === '::1') {
+                    continue;
+                }
+                if (filter_var($candidate, FILTER_VALIDATE_IP)) {
+                    return $candidate;
                 }
             }
         }
 
-        $xri = (string) ($request->header('X-Real-IP') ?? '');
-        if ($xri !== '' && filter_var($xri, FILTER_VALIDATE_IP)) {
-            return $xri;
+        $ip = $request->getClientIp();
+        if (is_string($ip) && $ip !== '') {
+            return $ip;
         }
 
-        return $request->ip() ?? 'unknown';
+        return 'unknown';
     }
 
     public function login(Request $request)
